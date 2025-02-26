@@ -3,5 +3,5 @@ out/
 .built
 .depend
 
-*/*.o
-*/*.dep
+*.o
+*.dep
