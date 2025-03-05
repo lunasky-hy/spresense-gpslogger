@@ -14,15 +14,18 @@
 
 #define CB_STATUS_ZERO 0
 
-extern void errMsg(int errcode);
-int getErrorCode(void);
+#include <lte/lte_api.h>
+
+extern void err_msg(int errcode);
+int get_err_code(void);
 
 void callbacked(void);
 void restart_cb(uint32_t r);
 // void netinfo_cb(lte_netinfo_t *info);
+void quality_cb(lte_quality_t *quality);
 
 // void show_lte_info(lte_version_t *version);
 extern int get_imsi(char *imsi);
 
-extern void finishProceeds(int state, int stop);
-extern void startProceeds(int state, int stop);
+extern void lte_finprocess(int state, int stop);
+extern void lte_staprocess(int state, int stop);

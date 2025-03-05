@@ -8,7 +8,7 @@ static uint8_t my_session_id;
 // Global variables <<<<<---------------------------------------
 
 // --------------------------------------->>>>> error message
-void errMsg(int errcode)
+void err_msg(int errcode)
 {
     switch (errcode)
     {
@@ -48,7 +48,7 @@ void errMsg(int errcode)
     }
 }
 
-int getErrorCode(void)
+int get_err_code(void)
 {
     lte_errinfo_t err_info;
     lte_get_errinfo(&err_info);
@@ -101,13 +101,13 @@ int get_imsi(char *imsi)
 // info functions <<<<<---------------------------------------
 
 // --------------------------------------->>>>> finish process
-void modemFins(void)
+void modem_finalize(void)
 {
     lte_finalize();
     printf("Modem is finalized.\n");
 }
 
-void modemPowerOff(void)
+void modem_pwoff(void)
 {
     int err = lte_power_off();
     if (err != 0)
@@ -116,7 +116,7 @@ void modemPowerOff(void)
     }
 }
 
-void modemRadioOff(void)
+void modem_radiooff(void)
 {
     int err = lte_radio_off_sync();
     if (err != 0)
@@ -125,7 +125,7 @@ void modemRadioOff(void)
     }
 }
 
-void modemDeactivatePdn(void)
+void modem_deacvtivepdn(void)
 {
     printf("Deactivate PDN...\n");
     int err = lte_deactivate_pdn_sync(my_session_id);
@@ -135,24 +135,24 @@ void modemDeactivatePdn(void)
     }
 }
 
-void finishProceeds(int state, int stop)
+void lte_finprocess(int state, int stop)
 {
     switch (state)
     {
     case STATE_CONNECTED_PDN:
-        modemDeactivatePdn(); // PDN connected -> Radio on
+        modem_deacvtivepdn(); // PDN connected -> Radio on
         if (stop == STATE_RADIO_ON)
             break;
     case STATE_RADIO_ON:
-        modemRadioOff(); // Radio on -> Power on
+        modem_radiooff(); // Radio on -> Power on
         if (stop == STATE_POWER_ON)
             break;
     case STATE_POWER_ON:
-        modemPowerOff(); // Power On -> Initialized
+        modem_pwoff(); // Power On -> Initialized
         if (stop == STATE_INITIALIZED)
             break;
     case STATE_INITIALIZED:
-        modemFins(); // Initialized -> Uninitialized
+        modem_finalize(); // Initialized -> Uninitialized
         break;
     default:
         printf("Finish Proceeds cannot execute... state: %d\n", state);
@@ -163,14 +163,14 @@ void finishProceeds(int state, int stop)
 // finish process <<<<<-----------------------------------
 
 // --------------------------------------->>>>> connecting process
-int modemInit(void)
+int modem_init(void)
 {
     printf("initilizing...\n");
     int err = lte_initialize();
     if (err != 0)
     {
         printf("Failed initilizeing....\n");
-        errMsg(err);
+        err_msg(err);
         if (err != -EALREADY)
             return -1;
         else
@@ -179,7 +179,7 @@ int modemInit(void)
     return 0;
 }
 
-int modemPowerOn(void)
+int modem_pwron(void)
 {
     cb_status = 1;
     int err = 0;
@@ -190,8 +190,8 @@ int modemPowerOn(void)
     if (err != 0)
     {
         printf("Failed reset and power on....\n");
-        errMsg(err);
-        finishProceeds(STATE_INITIALIZED, STATE_UNINITIALIZED);
+        err_msg(err);
+        lte_finprocess(STATE_INITIALIZED, STATE_UNINITIALIZED);
         return -1;
     }
 
@@ -203,7 +203,7 @@ int modemPowerOn(void)
     return 0;
 }
 
-int modemRadioOn(void)
+int modem_radioon(void)
 {
     printf("Connecting LTE Network...\n");
     int err = 0;
@@ -214,21 +214,21 @@ int modemRadioOn(void)
     if (err != 0)
     {
         printf("Failed radio on...\n");
-        errMsg(err);
-        if (err == -EPROTO && getErrorCode() == -EALREADY)
+        err_msg(err);
+        if (err == -EPROTO && get_err_code() == -EALREADY)
         {
             printf("Modem is already.");
         }
         else
         {
-            finishProceeds(STATE_POWER_ON, STATE_UNINITIALIZED);
+            lte_finprocess(STATE_POWER_ON, STATE_UNINITIALIZED);
             return -1;
         }
     }
     return 0;
 }
 
-int modemActivatePdn(void)
+int modem_activepdn(void)
 {
     lte_apn_setting_t apn_s;
     lte_pdn_t mypdn;
@@ -243,8 +243,8 @@ int modemActivatePdn(void)
     if (err != 0)
     {
         printf("Failed connecting network....\n");
-        errMsg(err);
-        finishProceeds(STATE_RADIO_ON, STATE_UNINITIALIZED);
+        err_msg(err);
+        lte_finprocess(STATE_RADIO_ON, STATE_UNINITIALIZED);
         return -1;
     }
 
@@ -254,31 +254,31 @@ int modemActivatePdn(void)
     return 0;
 }
 
-void startProceeds(int state, int stop)
+void lte_staprocess(int state, int stop)
 {
     int err = 0;
     switch (state)
     {
     case STATE_UNINITIALIZED:
-        err = modemInit();
+        err = modem_init();
         if (stop == STATE_INITIALIZED)
             break;
         if (err < 0)
             break;
     case STATE_INITIALIZED:
-        err = modemPowerOn();
+        err = modem_pwron();
         if (stop == STATE_POWER_ON)
             break;
         if (err < 0)
             break;
     case STATE_POWER_ON:
-        err = modemRadioOn();
+        err = modem_radioon();
         if (stop == STATE_RADIO_ON)
             break;
         if (err < 0)
             break;
     case STATE_RADIO_ON:
-        err = modemActivatePdn();
+        err = modem_activepdn();
         break;
     default:
         printf("Start Proceeds cannot execute... state: %d\n", state);
