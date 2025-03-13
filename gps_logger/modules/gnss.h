@@ -9,6 +9,7 @@ static void double_to_dmf(double x, struct cxd56_gnss_dms_s *dmf);
 static int read_and_print(int fd);
 static int gnss_setparams(int fd);
 
-int gnss_start();
-int gnss_getpos();
-int gnss_finish(struct cxd56_gnss_signal_setting_s *setting, sigset_t *mask);
+extern void gnss_finalize(int fd, sigset_t *mask);
+extern int gnss_initialize(sigset_t *mask);
+extern int gnss_get(int fd, sigset_t *mask);
+extern int gnss_stop(int fd);

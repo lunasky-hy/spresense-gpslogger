@@ -26,6 +26,7 @@ struct cxd56_gnss_dms_s
 
 static uint32_t posfixflag;
 static struct cxd56_gnss_positiondata_s posdat;
+struct cxd56_gnss_signal_setting_s setting;
 
 /****************************************************************************
  * Private Functions
@@ -199,14 +200,57 @@ _err:
   return ret;
 }
 
-int gnss_start()
+/****************************************************************************
+ * Name: gnss_finalize()
+ *
+ * Description:
+ *  Finalize GNSS.
+ *  Use this function to stop GNSS and release resources, when GNSS is no longer needed.
+ *  This function should be called after gnss_init().
+ *
+ * Input Parameters:
+ *  fd      - File descriptor.
+ *  setting - Signal setting.
+ *  mask    - Signal mask.
+ *
+ * Returned Value:
+ *  None.
+ *
+ ****************************************************************************/
+
+void gnss_finalize(int fd, sigset_t *mask)
+{
+  setting.enable = 0;
+  int ret = ioctl(fd, CXD56_GNSS_IOCTL_SIGNAL_SET, (unsigned long)&setting);
+  if (ret < 0)
+  {
+    printf("signal error\n");
+  }
+
+  sigprocmask(SIG_UNBLOCK, mask, NULL);
+
+  /* Release GNSS file descriptor. */
+  ret = close(fd);
+}
+
+/****************************************************************************
+ * Name: gnss_init()
+ *
+ * description:
+ *  Initialize GNSS.
+ *
+ * Input Parameters:
+ *  none.
+ *
+ * Returned Value:
+ *  Zero (OK) on success; Negative value on error.
+ ****************************************************************************/
+
+int gnss_initialize(sigset_t *mask)
 {
 
   int fd;
   int ret;
-  int posperiod;
-  sigset_t mask;
-  struct cxd56_gnss_signal_setting_s setting;
 
   /* Get file descriptor to control GNSS. */
 
@@ -219,14 +263,14 @@ int gnss_start()
 
   /* Configure mask to notify GNSS signal. */
 
-  sigemptyset(&mask);
-  sigaddset(&mask, MY_GNSS_SIG);
-  ret = sigprocmask(SIG_BLOCK, &mask, NULL);
+  sigemptyset(mask);
+  sigaddset(mask, MY_GNSS_SIG);
+  ret = sigprocmask(SIG_BLOCK, mask, NULL);
   if (ret != OK)
   {
     printf("sigprocmask failed. %d\n", ret);
-    gnss_finish(&setting, &mask);
-    return ret;
+    gnss_finalize(fd, mask);
+    return -1;
   }
 
   /* Set the signal to notify GNSS events. */
@@ -241,7 +285,7 @@ int gnss_start()
   if (ret < 0)
   {
     printf("signal error\n");
-    gnss_finish(&setting, &mask);
+    gnss_finalize(fd, mask);
     return ret;
   }
 
@@ -251,15 +295,9 @@ int gnss_start()
   if (ret != OK)
   {
     printf("gnss_setparams failed. %d\n", ret);
-    gnss_finish(&setting, &mask);
-    return ret;
+    gnss_finalize(fd, mask);
+    return -1;
   }
-
-  /* Initial positioning measurement becomes cold start if specified hot
-   * start, so working period should be long term to receive ephemeris. */
-
-  posperiod = 200;
-  posfixflag = 0;
 
   /* Start GNSS. */
 
@@ -267,30 +305,26 @@ int gnss_start()
   if (ret < 0)
   {
     printf("start GNSS ERROR %d\n", errno);
-    gnss_finish(&setting, &mask);
-    return ret;
+    gnss_finalize(fd, mask);
+    return -1;
   }
   else
   {
     printf("start GNSS OK\n");
   }
 
-  ret = gnss_finish(&setting, &mask);
-  return ret;
+  return fd;
 }
 
-int gnss_getpos(int fd, sigset_t *mask, int posperiod)
+int gnss_get(int fd, sigset_t *mask)
 {
   int ret;
-
-  /* Wait for positioning to be fixed. After fixed,
-   * idle for the specified seconds. */
 
   ret = sigwaitinfo(mask, NULL);
   if (ret != MY_GNSS_SIG)
   {
     printf("sigwaitinfo error %d\n", ret);
-    return ret;
+    return -1;
   }
 
   /* Read and print POS data. */
@@ -300,19 +334,11 @@ int gnss_getpos(int fd, sigset_t *mask, int posperiod)
   {
     return ret;
   }
-
-  if (posfixflag)
-  {
-    /* Count down started after POS fixed. */
-    posperiod--;
-  }
-
-  return posperiod;
+  return 0;
 }
 
-int gnss_finish(struct cxd56_gnss_signal_setting_s *setting, sigset_t *mask)
+int gnss_stop(int fd)
 {
-  int fd = setting->fd;
   int ret;
 
   /* Stop GNSS. */
@@ -325,25 +351,6 @@ int gnss_finish(struct cxd56_gnss_signal_setting_s *setting, sigset_t *mask)
   else
   {
     printf("stop GNSS OK\n");
-  }
-
-  /* GNSS firmware needs to disable the signal after positioning. */
-
-  setting->enable = 0;
-  ret = ioctl(fd, CXD56_GNSS_IOCTL_SIGNAL_SET, (unsigned long)setting);
-  if (ret < 0)
-  {
-    printf("signal error\n");
-  }
-
-  sigprocmask(SIG_UNBLOCK, mask, NULL);
-
-  /* Release GNSS file descriptor. */
-
-  ret = close(fd);
-  if (ret < 0)
-  {
-    printf("close error %d\n", errno);
   }
 
   return ret;
