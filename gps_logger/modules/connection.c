@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <lte/lte_api.h>
+#include <netutils/webclient.h>
 #include "connection.h"
+
+#define SORACOM_BEAM_URL "https://beam.soracom.io"
 
 // --------------------------------------->>>>> Global variables
 static int cb_status = 0;
@@ -286,3 +289,22 @@ void lte_staprocess(int state, int stop)
     }
 }
 // connecting process <<<<<-----------------------------------
+
+wget_callback_t wget_post_cb(void *arg, int result, FAR char *buffer, size_t buflen)
+{
+    printf("Result: %d\n", result);
+    printf("Buffer: %s\n", buffer);
+}
+
+int send2beam(const char *msg)
+{
+    int ret = 0;
+    char buffer[1024];
+
+    ret = wget_post(SORACOM_BEAM_URL, msg, buffer, 1024, wget_post_cb, NULL);
+    if (ret < 0)
+    {
+        printf("Failed to send message to beam\n");
+    }
+    return ret;
+}
