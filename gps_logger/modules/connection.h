@@ -29,3 +29,6 @@ extern int get_imsi(char *imsi);
 
 extern void lte_finprocess(int state, int stop);
 extern void lte_staprocess(int state, int stop);
+
+int send2beam(const char *msg);
+int send2harvest(const char *msg);

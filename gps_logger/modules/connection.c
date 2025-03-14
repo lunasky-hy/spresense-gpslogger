@@ -4,6 +4,7 @@
 #include "connection.h"
 
 #define SORACOM_BEAM_URL "https://beam.soracom.io"
+#define SORACOM_HARVEST_URL "http://harvest.soracom.io"
 
 // --------------------------------------->>>>> Global variables
 static int cb_status = 0;
@@ -211,8 +212,8 @@ int modem_radioon(void)
     printf("Connecting LTE Network...\n");
     int err = 0;
 
-    lte_set_report_netinfo(netinfo_cb);
-    lte_set_report_quality(quality_cb, 60);
+    // lte_set_report_netinfo(netinfo_cb);
+    // lte_set_report_quality(quality_cb, 60);
     err = lte_radio_on_sync();
     if (err != 0)
     {
@@ -290,10 +291,11 @@ void lte_staprocess(int state, int stop)
 }
 // connecting process <<<<<-----------------------------------
 
-wget_callback_t wget_post_cb(void *arg, int result, FAR char *buffer, size_t buflen)
+void wget_post_cb(char **buffer, int offset, int datend, int *buflen, void *arg)
 {
-    printf("Result: %d\n", result);
-    printf("Buffer: %s\n", buffer);
+    printf("Offset: %d\n", offset);
+    printf("Data end: %d\n", datend);
+    printf("Buffer length: %d\n", *buflen);
 }
 
 int send2beam(const char *msg)
@@ -305,6 +307,19 @@ int send2beam(const char *msg)
     if (ret < 0)
     {
         printf("Failed to send message to beam\n");
+    }
+    return ret;
+}
+
+int send2harvest(const char *msg)
+{
+    int ret = 0;
+    char buffer[256];
+
+    ret = wget_post(SORACOM_HARVEST_URL, msg, buffer, 256, wget_post_cb, NULL);
+    if (ret < 0)
+    {
+        printf("Failed to send message to harvest\n");
     }
     return ret;
 }

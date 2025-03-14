@@ -50,7 +50,7 @@ struct cxd56_gnss_signal_setting_s setting;
  *
  ****************************************************************************/
 
-static void double_to_dmf(double x, struct cxd56_gnss_dms_s *dmf)
+void double_to_dmf(double x, struct cxd56_gnss_dms_s *dmf)
 {
   int b;
   int d;
@@ -95,7 +95,7 @@ static void double_to_dmf(double x, struct cxd56_gnss_dms_s *dmf)
  *
  ****************************************************************************/
 
-static int read_and_print(int fd)
+int read_and_print(int fd)
 {
   int ret;
   struct cxd56_gnss_dms_s dmf;
@@ -167,7 +167,7 @@ _err:
  *
  ****************************************************************************/
 
-static int gnss_setparams(int fd)
+int gnss_setparams(int fd)
 {
   int ret = 0;
   uint32_t set_satellite;
@@ -316,7 +316,7 @@ int gnss_initialize(sigset_t *mask)
   return fd;
 }
 
-int gnss_get(int fd, sigset_t *mask)
+int gnss_get(int fd, sigset_t *mask, struct gnss_positiondata_s *position_data)
 {
   int ret;
 
@@ -327,14 +327,34 @@ int gnss_get(int fd, sigset_t *mask)
     return -1;
   }
 
-  /* Read and print POS data. */
-
-  ret = read_and_print(fd);
+  /* Read POS data. */
+  ret = read(fd, &posdat, sizeof(posdat));
   if (ret < 0)
   {
+    printf("read error\n");
     return ret;
   }
-  return 0;
+  else if (ret != sizeof(posdat))
+  {
+    ret = ERROR;
+    printf("read size error\n");
+    return ret;
+  }
+
+  if (posdat.receiver.pos_fixmode != CXD56_GNSS_PVT_POSFIX_INVALID)
+  {
+    position_data->latitude = posdat.receiver.latitude;
+    position_data->longitude = posdat.receiver.longitude;
+    position_data->altitude = posdat.receiver.altitude;
+    position_data->velocity = posdat.receiver.velocity;
+    position_data->direction = posdat.receiver.direction;
+
+    return OK;
+  }
+  else
+  {
+    return 1;
+  }
 }
 
 int gnss_stop(int fd)
