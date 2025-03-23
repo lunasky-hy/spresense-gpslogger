@@ -13,7 +13,7 @@ STACKSIZE = 8096
 MAINSRC =
 
 # Additional C source files (*.c)
-CSRCS =
+CSRCS = 
 
 # Additional C++ source files (*.cxx)
 CXXSRCS =

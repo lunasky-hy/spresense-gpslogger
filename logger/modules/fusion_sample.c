@@ -26,6 +26,8 @@ IMUData imuData;
 GNSSData gnssData;
 pthread_mutex_t data_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+int thread_sample(void);
+
 // ダミー関数（実際は各センサからデータを取得する処理を記述）
 void readIMU(double *ax, double *ay, double *az)
 {
@@ -83,7 +85,7 @@ void *thread_gnss(void *arg)
     return NULL;
 }
 
-int main()
+int thread_sample(void)
 {
     pthread_t imu_thread, gnss_thread;
 

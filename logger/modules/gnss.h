@@ -21,5 +21,6 @@ int gnss_setparams(int fd);
 
 extern void gnss_finalize(int fd, sigset_t *mask);
 extern int gnss_initialize(sigset_t *mask);
-extern int gnss_get(int fd, sigset_t *mask, struct gnss_positiondata_s *position_data);
 extern int gnss_stop(int fd);
+extern int gnss_get(int fd, sigset_t *mask, struct gnss_positiondata_s *position_data);
+extern int gnss_first_contact(int fd, sigset_t *mask);

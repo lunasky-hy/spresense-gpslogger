@@ -375,3 +375,36 @@ int gnss_stop(int fd)
 
   return ret;
 }
+
+int gnss_first_contact(int fd, sigset_t *mask)
+{
+  int ret;
+  
+  do {
+    printf("GNSS first position contact...\n");
+    ret = sigwaitinfo(mask, NULL);
+
+    if (ret != MY_GNSS_SIG)
+    {
+      printf("sigwaitinfo error %d\n", ret);
+      return -1;
+    }
+
+    /* Read POS data. */
+    ret = read(fd, &posdat, sizeof(posdat));
+    if (ret < 0)
+    {
+      printf("read error\n");
+      return ret;
+    }
+    else if (ret != sizeof(posdat))
+    {
+      ret = ERROR;
+      printf("read size error\n");
+      return ret;
+    }
+
+  } while (posdat.receiver.pos_fixmode == CXD56_GNSS_PVT_POSFIX_INVALID);
+
+  return OK;
+}

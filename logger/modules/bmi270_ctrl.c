@@ -24,7 +24,7 @@ IMUData data_stack[IMU_DATA_STACK_SIZE];
 IMUData imu_sensor_bias;
 int data_stack_pos = 0;
 
-int thread_imu_bmi270_main(void *arg)
+void *thread_imu_bmi270_main(void *arg)
 {
   int fd;
   int ret;
@@ -46,7 +46,7 @@ int thread_imu_bmi270_main(void *arg)
   {
     printf("ERROR: Failed to open %s: %d\n",
            I2C_DEVNAME_FOR_BMI270, errno);
-    return -1;
+    return NULL;
   }
 
   bmi270.i2c.fd = fd;
@@ -112,7 +112,7 @@ error_on_using_bmi270:
 
   fini_bmi270(&bmi270);
 
-  return ret;
+  return NULL;
 }
 
 int read_bmi270(void)

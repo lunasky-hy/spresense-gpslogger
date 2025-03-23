@@ -14,5 +14,5 @@ typedef struct
   float yaw;
 } IMUData;
 
-int thread_imu_bmi270_main(void *arg);
+void *thread_imu_bmi270_main(void *arg);
 int read_bmi270(void);
