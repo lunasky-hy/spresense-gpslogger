@@ -4,12 +4,6 @@
 #include "modules/gnss.h"
 #include "modules/bmi270_ctrl.h"
 
-int bmi270_connection(void)
-{
-  bmi270_ctrl();
-  return 0;
-}
-
 int main(int argc, FAR char *argv[])
 {
   char imsi[16];
@@ -18,9 +12,14 @@ int main(int argc, FAR char *argv[])
   int gnss_fd;
   int gnss_status;
   struct gnss_positiondata_s position_data;
+  pthread_t imu_thread, gnss_thread;
 
-  bmi270_connection();
-  return 0;
+  // thread initialize
+  if (pthread_create(&imu_thread, NULL, thread_imu_bmi270_main, NULL) != 0)
+  {
+    perror("IMUスレッド作成失敗");
+    exit(EXIT_FAILURE);
+  }
 
   // Start GNSS
   gnss_fd = gnss_initialize(&mask);
@@ -46,7 +45,7 @@ int main(int argc, FAR char *argv[])
       printf("%s\n", send_buffer);
 
       send2harvest(send_buffer);
-      sleep(30);
+      sleep(10);
     }
 
   } while (1);
