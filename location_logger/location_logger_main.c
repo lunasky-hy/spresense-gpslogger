@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "modules/connection.h"
 #include "modules/gnss.h"
-#include "modules/bmi270_ctrl.h"
+// #include "modules/bmi270_ctrl.h"
 
 int main(int argc, FAR char *argv[])
 {
@@ -11,14 +11,14 @@ int main(int argc, FAR char *argv[])
   char send_buffer[512];
   sigset_t mask;
   struct gnss_positiondata_s position_data;
-  pthread_t imu_thread;
+  // pthread_t imu_thread;
 
   // thread initialize
-  if (pthread_create(&imu_thread, NULL, thread_imu_bmi270_main, NULL) != 0)
-  {
-    perror("IMUスレッド作成失敗");
-    exit(EXIT_FAILURE);
-  }
+  // if (pthread_create(&imu_thread, NULL, thread_imu_bmi270_main, NULL) != 0)
+  // {
+  //   perror("IMUスレッド作成失敗");
+  //   exit(EXIT_FAILURE);
+  // }
 
   // Start GNSS
   gnss_fd = gnss_initialize(&mask);

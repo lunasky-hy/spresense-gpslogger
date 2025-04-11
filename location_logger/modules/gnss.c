@@ -254,7 +254,7 @@ int gnss_initialize(sigset_t *mask)
 
   /* Get file descriptor to control GNSS. */
 
-  fd = open(CONFIG_GNSS_DEVNAME, O_RDONLY);
+  fd = open(CONFIG_GNSS_ADDON_DEVNAME, O_RDONLY);
   if (fd < 0)
   {
     printf("open error:%d,%d\n", fd, errno);
